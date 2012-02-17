@@ -7,13 +7,11 @@
 
 #import "ELCAsset.h"
 #import "ELCAssetTablePicker.h"
-#import "TiUtils.h"
 
 @implementation ELCAsset
 
 @synthesize asset;
 @synthesize parent;
-@synthesize height;
 
 - (id)initWithFrame:(CGRect)frame {
     if ((self = [super initWithFrame:frame])) {
@@ -22,45 +20,28 @@
     return self;
 }
 
--(id)initWithAsset:(ALAsset*)_asset withHeight:(CGFloat) inHeight {
+-(id)initWithAsset:(ALAsset*)_asset andResourcePathPrefix:(NSString *)pathPrefix{
 	
-	if ((self = [super initWithFrame:CGRectMake(0, 0, 0, 0)])) {
+	if (self = [super initWithFrame:CGRectMake(0, 0, 0, 0)]) {
 		
 		self.asset = _asset;
 		
-        if (inHeight == 0)
-        {
-            self.height = kDefaultHeight;
-        }
-        else
-        {
-            self.height = inHeight;
-        }
-        
-		CGRect viewFrames = CGRectMake(0, 0, self.height, self.height);
+		CGRect viewFrames = CGRectMake(0, 0, 75, 75);
 		
 		UIImageView *assetImageView = [[UIImageView alloc] initWithFrame:viewFrames];
 		[assetImageView setContentMode:UIViewContentModeScaleToFill];
 		[assetImageView setImage:[UIImage imageWithCGImage:[self.asset thumbnail]]];
 		[self addSubview:assetImageView];
 		[assetImageView release];
-        
-        NSString *resourceurl = [[NSBundle mainBundle] resourcePath];
-        NSURL *url = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/modules/%@/%@",resourceurl,@"jp.kray.ti.elcimagepicker",@"Overlay.png"]];
-        UIImage *overlayImage = [UIImage imageWithContentsOfFile:[url path]];
+		
 		overlayView = [[UIImageView alloc] initWithFrame:viewFrames];
-		[overlayView setImage:overlayImage];
+		[overlayView setImage:[UIImage imageNamed:[NSString stringWithFormat:@"%@/Overlay.png", pathPrefix]]];
 		[overlayView setHidden:YES];
 		[self addSubview:overlayView];
     }
     
 	return self;	
 }
-
--(id)initWithAsset:(ALAsset*)_asset {
-    return [self initWithAsset:_asset withHeight:0];
-}
-
 
 -(void)toggleSelection {
     

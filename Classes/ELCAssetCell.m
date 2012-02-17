@@ -11,11 +11,10 @@
 @implementation ELCAssetCell
 
 @synthesize rowAssets;
-@synthesize height;
 
 -(id)initWithAssets:(NSArray*)_assets reuseIdentifier:(NSString*)_identifier {
     
-	if((self = [super initWithStyle:UITableViewStylePlain reuseIdentifier:_identifier])) {
+	if(self = [super initWithStyle:UITableViewCellStyleDefault reuseIdentifier:_identifier]) {
         
 		self.rowAssets = _assets;
 	}
@@ -35,16 +34,7 @@
 
 -(void)layoutSubviews {
     
-    if (self.height == 0)
-    {
-        self.height = kDefaultHeight;
-    }
-
-    CGFloat width = self.frame.size.width;
-    NSUInteger numPerRow = width / self.height;
-    CGFloat spacing = (width - (self.height * numPerRow)) / (float) (numPerRow + 1);
-    
-	CGRect frame = CGRectMake(spacing, 2, self.height, self.height);
+	CGRect frame = CGRectMake(4, 2, 75, 75);
 	
 	for(ELCAsset *elcAsset in self.rowAssets) {
 		
@@ -52,7 +42,7 @@
 		[elcAsset addGestureRecognizer:[[[UITapGestureRecognizer alloc] initWithTarget:elcAsset action:@selector(toggleSelection)] autorelease]];
 		[self addSubview:elcAsset];
 		
-		frame.origin.x = frame.origin.x + frame.size.width + spacing;
+		frame.origin.x = frame.origin.x + frame.size.width + 4;
 	}
 }
 

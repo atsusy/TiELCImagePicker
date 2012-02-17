@@ -10,31 +10,16 @@
 #import "ELCAsset.h"
 #import "ELCAlbumPickerController.h"
 
-@interface ELCAssetTablePicker ()
-- (NSUInteger) maxNumberOfCellsPerRow;
-@end
 
 @implementation ELCAssetTablePicker
 
 @synthesize parent;
 @synthesize selectedAssetsLabel;
 @synthesize assetGroup, elcAssets;
-@synthesize cellHeight;
-@synthesize titleForSelection;
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    // Return YES for supported orientations
-    return YES;
-}
+@synthesize resourcePathPrefix;
 
 -(void)viewDidLoad {
         
-    if (self.cellHeight == 0)
-    {
-        self.cellHeight = kDefaultHeight;
-    }
-
 	[self.tableView setSeparatorColor:[UIColor clearColor]];
 	[self.tableView setAllowsSelection:NO];
 
@@ -44,7 +29,7 @@
 	
 	UIBarButtonItem *doneButtonItem = [[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(doneAction:)] autorelease];
 	[self.navigationItem setRightBarButtonItem:doneButtonItem];
-	[self.navigationItem setTitle:NSLocalizedString(@"Loading...", @"Title bar text for loading albums")];
+	[self.navigationItem setTitle:NSLocalizedString(@"Loading...",@"Loading...")];
 
 	[self performSelectorInBackground:@selector(preparePhotos) withObject:nil];
     
@@ -57,7 +42,7 @@
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
 	
-    //NSLog(@"enumerating photos");
+    NSLog(@"enumerating photos");
     [self.assetGroup enumerateAssetsUsingBlock:^(ALAsset *result, NSUInteger index, BOOL *stop) 
      {         
          if(result == nil) 
@@ -65,19 +50,14 @@
              return;
          }
          
-         ELCAsset *elcAsset = [[[ELCAsset alloc] initWithAsset:result withHeight:self.cellHeight] autorelease];
+         ELCAsset *elcAsset = [[[ELCAsset alloc] initWithAsset:result andResourcePathPrefix:resourcePathPrefix] autorelease];
          [elcAsset setParent:self];
          [self.elcAssets addObject:elcAsset];
      }];    
-    //NSLog(@"done enumerating photos");
+    NSLog(@"done enumerating photos");
 	
 	[self.tableView reloadData];
-    if (self.titleForSelection == nil)
-    {
-        self.titleForSelection = NSLocalizedString(@"Pick Photos", @"Title for selecting photos");
-    }
-    
-	[self.navigationItem setTitle:self.titleForSelection];
+	[self.navigationItem setTitle:NSLocalizedString(@"Pick Photos",@"Pick Photos")];
     
     [pool release];
 
@@ -107,37 +87,44 @@
 
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return ceil([self.assetGroup numberOfAssets] / (float) [self maxNumberOfCellsPerRow]);
+    return ceil([self.assetGroup numberOfAssets] / 4.0);
 }
 
-- (NSUInteger) maxNumberOfCellsPerRow
-{
-    return floor(self.tableView.frame.size.width / self.cellHeight);
-}
-
--(NSArray*)assetsForIndexPath:(NSIndexPath*)_indexPath {
+- (NSArray*)assetsForIndexPath:(NSIndexPath*)_indexPath {
     
-    NSUInteger maxPerRow = [self maxNumberOfCellsPerRow];
-    
-	int index = (_indexPath.row*maxPerRow);
-	int maxIndex = (_indexPath.row*maxPerRow+(maxPerRow - 1));
-    int minIndex  = maxIndex - maxPerRow + 1;
+	int index = (_indexPath.row*4);
+	int maxIndex = (_indexPath.row*4+3);
     
 	// NSLog(@"Getting assets for %d to %d with array count %d", index, maxIndex, [assets count]);
     
-    for (int temp = maxIndex; temp >= minIndex; temp--)
-    {
-        if (temp < [self.elcAssets count])
-        {
-            NSMutableArray *array = [[NSMutableArray alloc] init];
-            for (int i = index; i <= temp; i++)
-            {
-                [array addObject:[self.elcAssets objectAtIndex:i]];
-            }
-            
-            return [array autorelease];
-        }
-    }
+	if(maxIndex < [self.elcAssets count]) {
+        
+		return [NSArray arrayWithObjects:[self.elcAssets objectAtIndex:index],
+				[self.elcAssets objectAtIndex:index+1],
+				[self.elcAssets objectAtIndex:index+2],
+				[self.elcAssets objectAtIndex:index+3],
+				nil];
+	}
+    
+	else if(maxIndex-1 < [self.elcAssets count]) {
+        
+		return [NSArray arrayWithObjects:[self.elcAssets objectAtIndex:index],
+				[self.elcAssets objectAtIndex:index+1],
+				[self.elcAssets objectAtIndex:index+2],
+				nil];
+	}
+    
+	else if(maxIndex-2 < [self.elcAssets count]) {
+        
+		return [NSArray arrayWithObjects:[self.elcAssets objectAtIndex:index],
+				[self.elcAssets objectAtIndex:index+1],
+				nil];
+	}
+    
+	else if(maxIndex-3 < [self.elcAssets count]) {
+        
+		return [NSArray arrayWithObject:[self.elcAssets objectAtIndex:index]];
+	}
     
 	return nil;
 }
@@ -158,14 +145,12 @@
 		[cell setAssets:[self assetsForIndexPath:indexPath]];
 	}
     
-    cell.height = self.cellHeight;
-    
     return cell;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-	return self.cellHeight + 4;
+	return 79;
 }
 
 - (int)totalSelectedAssets {
@@ -183,15 +168,8 @@
     return count;
 }
 
-- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
-{
-    [self.tableView reloadData];
-}
-
-
 - (void)dealloc 
 {
-    self.titleForSelection = nil;
     [elcAssets release];
     [selectedAssetsLabel release];
     [super dealloc];    

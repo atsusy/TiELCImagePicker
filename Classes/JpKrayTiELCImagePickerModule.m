@@ -109,12 +109,11 @@
 		}
     }
     
-    ELCAlbumPickerController *albumController = [[ELCAlbumPickerController alloc] init];    
+    NSString *moduleAssets = [NSString stringWithFormat:@"modules/%@", [[self moduleId] lowercaseString]];
+    ELCAlbumPickerController *albumController = [[ELCAlbumPickerController alloc] initWithNibPath:moduleAssets];    
+    albumController.delegate = self;
     ELCImagePickerController *elcPicker = [[ELCImagePickerController alloc] initWithRootViewController:albumController];
     [albumController setParent:elcPicker];
-    albumController.assetFilter = kELCAlbumAllAssets;
-    albumController.cellHeight = 75;
-    albumController.titleForSelection = NSLocalizedString(@"Pick Something", @"Title for picking items");
     [elcPicker setDelegate:self];    
     
     TiApp *tiApp = [TiApp app];
@@ -122,6 +121,11 @@
     
     [elcPicker release];
     [albumController release];
+}
+#pragma mark ELCAlbumPickerControllerDelegate Methods
+- (void)ErrorOccurred:(NSError *)error
+{
+    [self fireEvent:@"error" withObject:[NSDictionary dictionaryWithObjectsAndKeys:[error localizedDescription], @"description", nil]];
 }
 
 #pragma mark ELCImagePickerControllerDelegate Methods

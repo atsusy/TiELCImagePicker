@@ -18,16 +18,13 @@
 	id parent;
 	
 	NSOperationQueue *queue;
-    CGFloat cellHeight;
-    NSString *titleForSelection;
 }
 
 @property (nonatomic, assign) id parent;
 @property (nonatomic, assign) ALAssetsGroup *assetGroup;
 @property (nonatomic, retain) NSMutableArray *elcAssets;
 @property (nonatomic, retain) IBOutlet UILabel *selectedAssetsLabel;
-@property (nonatomic, assign) CGFloat cellHeight;
-@property (nonatomic, retain) NSString *titleForSelection;
+@property (nonatomic, retain) NSString *resourcePathPrefix;
 
 -(int)totalSelectedAssets;
 -(void)preparePhotos;

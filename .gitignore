@@ -4,3 +4,4 @@ build
 *.zip
 tielcimagepicker.xcodeproj/project.xcworkspace
 tielcimagepicker.xcodeproj/xcuserdata
+.DS_Store

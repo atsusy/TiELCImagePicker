@@ -11,13 +11,11 @@
 @interface ELCAssetCell : UITableViewCell
 {
 	NSArray *rowAssets;
-    CGFloat height;
 }
 
 -(id)initWithAssets:(NSArray*)_assets reuseIdentifier:(NSString*)_identifier;
 -(void)setAssets:(NSArray*)_assets;
 
 @property (nonatomic,retain) NSArray *rowAssets;
-@property (nonatomic, assign) CGFloat height;
 
 @end

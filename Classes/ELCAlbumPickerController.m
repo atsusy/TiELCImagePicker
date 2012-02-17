@@ -5,37 +5,30 @@
 //  Copyright 2011 ELC Technologies. All rights reserved.
 //
 
-#import <AssetsLibrary/AssetsLibrary.h>
 #import "ELCAlbumPickerController.h"
 #import "ELCImagePickerController.h"
 #import "ELCAssetTablePicker.h"
-#import "ELCAsset.h"
-
-@interface ELCAlbumPickerController ()
-- (ALAssetsFilter *) filter;
-@end
-
 
 @implementation ELCAlbumPickerController
 
-@synthesize parent, assetGroups;
-@synthesize assetFilter;
-@synthesize cellHeight;
-@synthesize titleForSelection;
+@synthesize parent, assetGroups, delegate;
+
+- (id)initWithNibPath:(NSString *)path
+{
+    self = [super init];
+    if(self){
+        nibPath = [path retain];
+    }
+    return self;
+}
 
 #pragma mark -
 #pragma mark View lifecycle
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    // Return YES for supported orientations
-    return YES;
-}
-
 - (void)viewDidLoad {
     [super viewDidLoad];
 	
-	[self.navigationItem setTitle:NSLocalizedString(@"Loading...", @"Title bar text for loading albums")];
+	[self.navigationItem setTitle:NSLocalizedString(@"Loading...",@"Loading...")];
 
     UIBarButtonItem *cancelButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel target:self.parent action:@selector(cancelImagePicker)];
 	[self.navigationItem setRightBarButtonItem:cancelButton];
@@ -44,6 +37,8 @@
     NSMutableArray *tempArray = [[NSMutableArray alloc] init];
 	self.assetGroups = tempArray;
     [tempArray release];
+    
+    library = [[ALAssetsLibrary alloc] init];      
 
     // Load Albums into assetGroups
     dispatch_async(dispatch_get_main_queue(), ^
@@ -51,41 +46,45 @@
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
         
         // Group enumerator Block
-        ALAssetsLibraryGroupsEnumerationResultsBlock assetGroupEnumerator = ^(ALAssetsGroup *group, BOOL *stop) 
+        void (^assetGroupEnumerator)(ALAssetsGroup *, BOOL *) = ^(ALAssetsGroup *group, BOOL *stop) 
         {
             if (group == nil) 
             {
                 return;
             }
             
-            [group setAssetsFilter:[self filter]];
-            if ([group numberOfAssets])
-            {
-                [self.assetGroups addObject:group];
-            }
+            [self.assetGroups addObject:group];
 
             // Reload albums
             [self performSelectorOnMainThread:@selector(reloadTableView) withObject:nil waitUntilDone:YES];
         };
         
         // Group Enumerator Failure Block
-        ALAssetsLibraryAccessFailureBlock assetGroupEnumberatorFailure = ^(NSError *error) {
-            
-            UIAlertView * alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Album Error", @"Title for error when enumerating albums") message:[error description] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+        void (^assetGroupEnumberatorFailure)(NSError *) = ^(NSError *error) {
+#if 0            
+            UIAlertView * alert = [[UIAlertView alloc] initWithTitle:NSLocalizedString(@"Error",@"Error")
+                                                             message:[NSString stringWithFormat:@"%@: %@ - %@", 
+                                                                      NSLocalizedString(@"Album Error", @"Album Error"),
+                                                                      [error localizedDescription], 
+                                                                      [error localizedRecoverySuggestion]] 
+                                                            delegate:nil 
+                                                   cancelButtonTitle:@"Ok" 
+                                                   otherButtonTitles:nil];
             [alert show];
             [alert release];
-            
-            //NSLog(@"A problem occured %@", [error description]);	                                 
+#else
+            if(delegate){
+                [delegate ErrorOccurred:error];
+            }
+#endif
+            NSLog(@"A problem occured %@", [error description]);	                                 
         };	
                 
         // Enumerate Albums
-        ALAssetsLibrary *library = [[ALAssetsLibrary alloc] init];        
         [library enumerateGroupsWithTypes:ALAssetsGroupAll
                                usingBlock:assetGroupEnumerator 
                              failureBlock:assetGroupEnumberatorFailure];
         
-        
-        [library release];
         [pool release];
     });    
 }
@@ -93,7 +92,7 @@
 -(void)reloadTableView {
 	
 	[self.tableView reloadData];
-	[self.navigationItem setTitle:NSLocalizedString(@"Select an Album", @"Text for title bar when selecting an album")];
+	[self.navigationItem setTitle:NSLocalizedString(@"Select an Album",@"Select an Album")];
 }
 
 -(void)selectedAssets:(NSArray*)_assets {
@@ -128,7 +127,7 @@
     
     // Get count
     ALAssetsGroup *g = (ALAssetsGroup*)[assetGroups objectAtIndex:indexPath.row];
-    [g setAssetsFilter:[self filter]];
+    [g setAssetsFilter:[ALAssetsFilter allPhotos]];
     NSInteger gCount = [g numberOfAssets];
     
     cell.textLabel.text = [NSString stringWithFormat:@"%@ (%d)",[g valueForProperty:ALAssetsGroupPropertyName], gCount];
@@ -142,19 +141,14 @@
 #pragma mark Table view delegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-	
-	ELCAssetTablePicker *picker = [[ELCAssetTablePicker alloc] init];
+    NSString *nibName = [NSString stringWithFormat:@"%@/ELCAssetTablePicker", nibPath];
+	ELCAssetTablePicker *picker = [[ELCAssetTablePicker alloc] initWithNibName:nibName bundle:[NSBundle mainBundle]];
 	picker.parent = self;
-    picker.titleForSelection = self.titleForSelection;
-    if (self.cellHeight == 0)
-    {
-        self.cellHeight = kDefaultHeight;
-    }
-    picker.cellHeight = self.cellHeight;
-
+    picker.resourcePathPrefix = nibPath;
+    
     // Move me    
     picker.assetGroup = [assetGroups objectAtIndex:indexPath.row];
-    [picker.assetGroup setAssetsFilter:[self filter]];
+    [picker.assetGroup setAssetsFilter:[ALAssetsFilter allPhotos]];
     
 	[self.navigationController pushViewController:picker animated:YES];
 	[picker release];
@@ -183,31 +177,10 @@
 
 - (void)dealloc 
 {	
-    self.titleForSelection = nil;
+    [nibPath release];
     [assetGroups release];
+    [library release];
     [super dealloc];
-}
-
-- (ALAssetsFilter *) filter
-{
-    switch (self.assetFilter)
-    {
-        case kELCAlbumAllAssets:
-        default:
-        {
-            return [ALAssetsFilter allAssets];
-        }
-
-        case kELCAlbumAllPhotos:
-        {
-            return [ALAssetsFilter allPhotos];
-        }
-
-        case kELCAlbumAllVideos:
-        {
-            return [ALAssetsFilter allVideos];
-        }
-    }
 }
 
 @end

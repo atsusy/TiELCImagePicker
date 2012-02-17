@@ -6,30 +6,31 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AssetsLibrary/AssetsLibrary.h>
 
-typedef enum ELCAlbumPickerFilter {
-    kELCAlbumAllAssets = 0,
-    kELCAlbumAllPhotos,
-    kELCAlbumAllVideos
-} ELCAlbumPickerFilter;
+@protocol ELCAlbumPickerControllerDelegate;
 
 @interface ELCAlbumPickerController : UITableViewController {
 	
 	NSMutableArray *assetGroups;
 	NSOperationQueue *queue;
 	id parent;
-    ELCAlbumPickerFilter assetFilter;
-    CGFloat cellHeight;
-    NSString *titleForSelection;
+    NSString *nibPath;
+    ALAssetsLibrary *library;
 }
 
 @property (nonatomic, assign) id parent;
 @property (nonatomic, retain) NSMutableArray *assetGroups;
-@property (nonatomic, assign) ELCAlbumPickerFilter assetFilter;
-@property (nonatomic, assign) CGFloat cellHeight;
-@property (nonatomic, retain) NSString *titleForSelection;
+@property (nonatomic, assign) id<ELCAlbumPickerControllerDelegate> delegate;
 
+-(id)initWithNibPath:(NSString *)path;
 -(void)selectedAssets:(NSArray*)_assets;
 
 @end
+
+@protocol ELCAlbumPickerControllerDelegate
+- (void)ErrorOccurred:(NSError *)error;
+@end
+
+
 

@@ -8,22 +8,18 @@
 #import <UIKit/UIKit.h>
 #import <AssetsLibrary/AssetsLibrary.h>
 
-#define kDefaultHeight 75
 
 @interface ELCAsset : UIView {
 	ALAsset *asset;
 	UIImageView *overlayView;
 	BOOL selected;
 	id parent;
-    CGFloat height;
 }
 
 @property (nonatomic, retain) ALAsset *asset;
 @property (nonatomic, assign) id parent;
-@property (nonatomic, assign) CGFloat height;
 
--(id)initWithAsset:(ALAsset*)_asset;
--(id)initWithAsset:(ALAsset*)_asset withHeight:(CGFloat) inHeight;
+-(id)initWithAsset:(ALAsset*)_asset andResourcePathPrefix:(NSString *)pathPrefix;
 -(BOOL)selected;
 
 @end

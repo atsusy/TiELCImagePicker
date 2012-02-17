@@ -6,8 +6,9 @@
  */
 #import "TiModule.h"
 #import "KrollCallback.h"
+#import "ELCAlbumPickerController.h"
 
-@interface JpKrayTiELCImagePickerModule : TiModule {
+@interface JpKrayTiELCImagePickerModule : TiModule <ELCAlbumPickerControllerDelegate> {
     KrollCallback *pickerSuccessCallback;
 	KrollCallback *pickerErrorCallback;
 	KrollCallback *pickerCancelCallback;
